@@ -3,6 +3,8 @@ services:
     name: mainttrack
     runtime: docker
     plan: free
+    branch: main
+    autoDeployTrigger: commit
     dockerfilePath: Dockerfile
     healthCheckPath: /api/health-check
     envVars:
