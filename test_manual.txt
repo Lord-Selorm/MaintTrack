@@ -1,0 +1,2 @@
+This is a test manual file for equipment upload.
+Uploaded by test script.
