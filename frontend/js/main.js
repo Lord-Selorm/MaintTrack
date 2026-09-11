@@ -122,7 +122,7 @@ function switchAuthMode(mode) {
   authMode = mode;
   document.getElementById('auth-login-btn').style.opacity = mode === 'login' ? '1' : '0.5';
   document.getElementById('auth-register-btn').style.opacity = mode === 'register' ? '1' : '0.5';
-  const form = document.getElementById('auth-form');
+const form = document.getElementById('auth-form');
   if (mode === 'login') {
     form.innerHTML = `
       <div class="form-group" style="margin-bottom:12px"><label for="auth-email">Email</label><input type="email" id="auth-email" name="email" autocomplete="email" placeholder="your@email.com"></div>
@@ -137,12 +137,22 @@ function switchAuthMode(mode) {
       <button type="button" class="btn btn-primary" onclick="doRegister()" style="width:100%" aria-label="Create a new account"><i class="fa-solid fa-user-plus"></i> Create Account</button>
     `;
   }
+  const onAuthKey = (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (authMode === 'login') doLogin();
+    else doRegister();
+  };
+  ['auth-email', 'auth-password', 'auth-name'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.onkeydown = onAuthKey;
+  });
 }
 
 async function doLogin() {
   const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value.trim();
-  if (!email || !password) { alert('Email and password required'); return; }
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { showToast('Email and password are required', 'warning'); return; }
   try {
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
@@ -165,8 +175,8 @@ async function doLogin() {
 async function doRegister() {
   const name = document.getElementById('auth-name').value.trim();
   const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value.trim();
-  if (!email || !password) { alert('Email and password required'); return; }
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { showToast('Email and password are required', 'warning'); return; }
   try {
     const res = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
@@ -233,12 +243,13 @@ function copyAdminCreds(email, password) {
 }
 
 function logout() {
-  if (confirm('Logout from MaintTrack?')) {
+  confirmDialog('Log out?', 'You will be returned to the login screen.', 'Log out').then(ok => {
+    if (!ok) return;
     authToken = null;
     currentUser = null;
     localStorage.removeItem('auth_token');
     location.reload();
-  }
+  });
 }
 
 /* ═══════════════════════════════════════════════
@@ -810,7 +821,18 @@ function renderWorkLog() {
 /* ═══════════════════════════════════════════════
    MODALS
 ═══════════════════════════════════════════════ */
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const staticModals = new Set(['equip-modal', 'work-modal']);
+  document.querySelectorAll('.modal-overlay.open').forEach(m => {
+    if (staticModals.has(m.id)) m.classList.remove('open');
+    else m.remove();
+  });
+});
 
 function formatWarrantyValue(expiration, terms) {
   const parts = [];
@@ -872,7 +894,7 @@ function openEditEquipModal(id) {
 function saveEquip() {
   const name = document.getElementById('f-name').value.trim();
   const serial = document.getElementById('f-serial').value.trim();
-  if (!name || !serial) { alert('Equipment name and serial number are required.'); return; }
+  if (!name || !serial) { showToast('Equipment name and serial number are required', 'warning'); return; }
   const warranty = parseWarrantyValue(document.getElementById('f-warranty').value);
   const data = {
     name, serial,
@@ -906,8 +928,8 @@ function openAddWorkModal(equipId) {
 function submitWorkForm() {
   const equipId = document.getElementById('w-equip').value;
   const desc = document.getElementById('w-desc').value.trim();
-  if (!equipId) { alert('Please select equipment.'); return; }
-  if (!desc) { alert('Description is required.'); return; }
+if (!equipId) { showToast('Please select equipment', 'warning'); return; }
+  if (!desc) { showToast('Description is required', 'warning'); return; }
   const data = {
     equipId,
     type: document.getElementById('w-type').value,
@@ -924,25 +946,41 @@ function submitWorkForm() {
 /* ═══════════════════════════════════════════════
    DELETE CONFIRM
 ═══════════════════════════════════════════════ */
-function confirmDelete(type, id) {
-  const overlay = document.getElementById('confirm-overlay');
-  overlay.classList.add('open');
+function confirmDialog(title, message, okLabel = 'Delete', danger = true) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('confirm-overlay');
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').textContent = message;
+    const ok = document.getElementById('confirm-ok');
+    ok.textContent = okLabel;
+    ok.className = danger ? 'btn btn-danger' : 'btn btn-primary';
+    const finish = (val) => {
+      closeConfirm();
+      ok.onclick = null;
+      const cancel = document.getElementById('confirm-cancel');
+      cancel.onclick = null;
+      document.removeEventListener('keydown', onKey);
+      resolve(val);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') finish(false); };
+    ok.onclick = () => finish(true);
+    document.getElementById('confirm-cancel').onclick = () => finish(false);
+    document.addEventListener('keydown', onKey);
+    overlay.classList.add('open');
+  });
+}
+
+async function confirmDelete(type, id) {
   if (type === 'equip') {
     const eq = equipment.find(e => e.id == id);
-    document.getElementById('confirm-title').textContent = 'Delete Equipment?';
-    document.getElementById('confirm-msg').textContent = `"${eq.name}" and all its work records (${equipWorks(id).length}) will be permanently deleted.`;
-    document.getElementById('confirm-ok').onclick = () => {
-      deleteEquipment(id);
-      closeConfirm();
-      if (currentDetailId === id) { currentDetailId = null; showPage('equipment'); }
-    };
+    const ok = await confirmDialog('Delete Equipment?', `"${eq.name}" and all its work records (${equipWorks(id).length}) will be permanently deleted.`);
+    if (!ok) return;
+    deleteEquipment(id);
+    if (currentDetailId === id) { currentDetailId = null; showPage('equipment'); }
   } else {
-    document.getElementById('confirm-title').textContent = 'Delete Work Record?';
-    document.getElementById('confirm-msg').textContent = 'This work record will be permanently deleted.';
-    document.getElementById('confirm-ok').onclick = () => {
-      deleteWork(id);
-      closeConfirm();
-    };
+    const ok = await confirmDialog('Delete Work Record?', 'This work record will be permanently deleted.');
+    if (!ok) return;
+    deleteWork(id);
   }
 }
 function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); }

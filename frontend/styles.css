@@ -1267,3 +1267,54 @@ body.dark-mode .auth-panel { background: var(--bg); }
   .detail-actions { width: 100%; justify-content: flex-start; }
   table { font-size: 12.5px; }
 }
+
+/* - QoL polish (upgrade pass) - */
+.table-wrap {
+  max-height: min(480px, 70vh);
+  overflow: auto;
+}
+.table-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--blue);
+}
+
+.empty-state.compact {
+  padding: 18px;
+}
+.empty-state.compact i {
+  font-size: 22px;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text3);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-track { background: transparent; }

@@ -72,7 +72,7 @@ async function downloadManual(equipId) {
 
 // Delete manual for equipment
 async function deleteManual(equipId) {
-  if (!confirm('Are you sure you want to delete this manual?')) return;
+  if (!(await confirmDialog('Delete Manual?', 'This equipment manual file will be permanently removed.'))) return;
 
   try {
     const response = await fetch(`${API_URL}/equipment/${equipId}/manual`, {

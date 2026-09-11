@@ -1174,7 +1174,7 @@ async function downloadWorkAttachment(attachmentId, workId) {
 }
 
 async function deleteWorkAttachment(attachmentId, workId) {
-  if (!confirm('Delete this attachment?')) return;
+  if (!(await confirmDialog('Delete Attachment?', 'This work attachment will be permanently removed.'))) return;
 
   try {
     await apiCall('DELETE', `/work/${workId}/attachments/${attachmentId}`);

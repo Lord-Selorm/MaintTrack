@@ -206,7 +206,7 @@ async function editSchedule(id) {
 }
 
 async function deleteSchedule(id) {
-  if (!confirm('Delete this schedule?')) return;
+  if (!(await confirmDialog('Delete Schedule?', 'This maintenance schedule will be permanently removed.'))) return;
   try {
     await apiCall('DELETE', `/schedules/${id}`);
     renderSchedules();
@@ -359,7 +359,7 @@ function launchChecklistInspection(checklistId) {
 }
 
 async function deleteChecklist(id) {
-  if (!confirm('Delete this checklist?')) return;
+  if (!(await confirmDialog('Delete Checklist?', 'This checklist and its completion history will be permanently removed.'))) return;
   try {
     await apiCall('DELETE', `/checklists/${id}`);
     renderChecklists();

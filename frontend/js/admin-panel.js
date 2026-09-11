@@ -297,7 +297,7 @@ const adminPanel = {
   },
 
   async deleteMember(id) {
-    if (!confirm('Delete this team member? This cannot be undone.')) return;
+    if (!(await confirmDialog('Remove Team Member?', 'Delete this team member? This cannot be undone.'))) return;
     try {
       await apiCall('DELETE', `/users/${id}`);
       showToast('Team member deleted', 'success');
