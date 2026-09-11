@@ -5,8 +5,9 @@ const fs = require('fs');
 const path = require('path');
 const auth = require('../middleware/auth');
 const Equipment = require('../models/Equipment');
+const config = require('../config');
 
-const upload = multer({ dest: path.join(__dirname, '../uploads/tmp') });
+const upload = multer({ dest: path.join(config.uploadsDir, 'tmp') });
 
 // POST /api/import/csv - upload a CSV file and import equipment rows
 router.post('/csv', auth, upload.single('file'), async (req, res) => {

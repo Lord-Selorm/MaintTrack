@@ -1,0 +1,646 @@
+<!--
+╔════════════════════════════════════════════════════════════════════════════╗
+║                  EQUIPMENT MAINTENANCE TRACKER - FRONTEND                  ║
+║                      Single Page Application (SPA)                         ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+PURPOSE:
+  Complete maintenance tracking application for equipment and assets.
+  Provides dashboard, equipment management, work logging, analytics, and more.
+
+STRUCTURE:
+  - Single HTML file with embedded CSS and inline JavaScript
+  - Responsive design with sidebar navigation
+  - All pages/screens rendered in the same DOM
+  - Page visibility controlled by CSS classes
+
+KEY SECTIONS:
+  1. <head>: Meta tags, fonts, CSS styling
+  2. <body>: Main app structure
+     - .app-shell: Main container
+       - .sidebar: Left navigation panel
+       - .main-content: Right content area
+         - .header: Top bar with search, buttons
+         - .section: Each page content (dashboard, equipment, health, etc.)
+
+PAGES INCLUDED:
+  - page-dashboard: Overview and quick stats
+  - page-equipment: Equipment list and management
+  - page-work-log: Work history and logging
+  - page-health: Equipment health scores
+  - page-schedules: Maintenance scheduling
+  - page-checklists: Inspection templates
+  - page-team: Team member management
+  - page-analytics: Advanced analytics
+  - page-reports: Report generation
+  - page-alerts: Alert management
+
+FEATURES:
+  ✓ Dark Mode toggle
+  ✓ Responsive layout (desktop & tablet)
+  ✓ Equipment tracking with photos
+  ✓ Work log with attachments
+  ✓ Role-based access control
+  ✓ Health scoring system
+  ✓ Maintenance scheduling
+  ✓ Export functionality (PDF, Excel, Word)
+  ✓ Advanced search and filtering
+  ✓ Real-time alerts
+
+DEPENDENCIES:
+  - Font Awesome Icons (CDN)
+  - Chart.js for graphing
+  - JSZip for file export
+
+JAVASCRIPT FILES (loaded at bottom):
+  - all-improvements.js: Core features
+  - advanced-features.js: Advanced features (RBAC, scheduling, etc.)
+  - new-pages.js: New page renderers
+  - api-service.js: Backend API communication
+
+STYLING APPROACH:
+  - CSS Custom Properties (--variables) for theming
+  - Flexbox for layout
+  - CSS Grid for dashboard
+  - Dark mode via body.dark-mode class
+  - Mobile-first responsive design
+
+USAGE:
+  1. Open maintenance_tracker.html in browser
+  2. Register or login
+  3. Navigate using sidebar
+  4. Add equipment, log work, view analytics
+  5. Use settings for preferences
+
+NOTE: 
+  This is a development version with force: true in database sync.
+  Change to force: false in production to preserve data.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Equipment Maintenance Tracker</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter@5.0.16/index.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ── Auth Screen ── -->
+<div id="auth-screen">
+  <div class="auth-brand">
+    <div>
+      <div class="auth-brand-top">
+        <div class="brand-mark">
+          <i class="fa-solid fa-screwdriver-wrench"></i>
+          <span>MaintTrack</span>
+        </div>
+      </div>
+      <h2>Equipment maintenance, under control.</h2>
+      <p class="brand-tag">Track equipment, schedule work, approve repairs, and keep every asset audit-ready from one dashboard.</p>
+      <div class="auth-features">
+        <div class="auth-feature"><i class="fa-solid fa-shield-halved"></i> Role-based access — admin, manager, technician, viewer</div>
+        <div class="auth-feature"><i class="fa-solid fa-list-check"></i> Approved work orders with full audit trail</div>
+        <div class="auth-feature"><i class="fa-solid fa-calendar-check"></i> Smart auto-scheduling from health scores</div>
+        <div class="auth-feature"><i class="fa-solid fa-qrcode"></i> QR-enabled equipment check-ins</div>
+      </div>
+    </div>
+    <div class="auth-brand-foot">MaintTrack &copy; 2026 &middot; Enterprise Equipment Maintenance System</div>
+  </div>
+  <div class="auth-panel">
+    <div class="auth-card">
+      <div class="auth-head">
+        <div class="auth-mobile-mark"><i class="fa-solid fa-screwdriver-wrench"></i> MaintTrack</div>
+        <h1>Welcome back</h1>
+        <p>Sign in to your workspace to continue.</p>
+      </div>
+      <div class="auth-toggle" role="tablist" aria-label="Authentication mode">
+        <button type="button" onclick="switchAuthMode('login')" id="auth-login-btn" style="opacity:1" aria-label="Switch to login form">Login</button>
+        <button type="button" onclick="switchAuthMode('register')" id="auth-register-btn" style="opacity:0.5" aria-label="Switch to create account form">Create Account</button>
+      </div>
+      <div id="auth-form"></div>
+      <div id="seed-info" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<div class="app-shell" id="app-shell" style="display:none">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar" style="display:none">
+<div class="sidebar-logo">
+      <h1><i class="fa-solid fa-wrench"></i> <span>MaintTrack<u>Equipment Suite</u></span></h1>
+      <button class="sidebar-toggle" onclick="toggleSidebar()" title="Collapse/Expand Sidebar">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Operations</div>
+      <button class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard" data-label="Dashboard">
+        <i class="fa-solid fa-gauge-high"></i> <span>Dashboard</span>
+      </button>
+      <button class="nav-item" onclick="showPage('equipment')" id="nav-equipment" data-label="Equipment">
+        <i class="fa-solid fa-boxes-stacked"></i> <span>Equipment</span>
+      </button>
+      <button class="nav-item" onclick="showPage('worklog')" id="nav-worklog" data-label="Work Log">
+        <i class="fa-solid fa-clipboard-list"></i> <span>Work Log</span>
+      </button>
+      <div class="nav-label">Planning</div>
+      <button class="nav-item" onclick="showPage('health')" id="nav-health" data-label="Health">
+        <i class="fa-solid fa-heart-pulse"></i> <span>Health</span>
+      </button>
+      <button class="nav-item" onclick="showPage('schedules')" id="nav-schedules" data-label="Schedules">
+        <i class="fa-solid fa-calendar-days"></i> <span>Schedules</span>
+      </button>
+      <button class="nav-item" onclick="showPage('checklists')" id="nav-checklists" data-label="Checklists">
+        <i class="fa-solid fa-list-check"></i> <span>Checklists</span>
+      </button>
+      <div class="nav-label">Administration</div>
+      <button class="nav-item" onclick="showPage('team')" id="nav-team" data-label="Team" data-require="canManageUsers">
+        <i class="fa-solid fa-users"></i> <span>Team</span>
+      </button>
+      <button class="nav-item" onclick="showPage('audit')" id="nav-audit" data-label="Audit Log" data-require="canManageUsers">
+        <i class="fa-solid fa-user-shield"></i> <span>Audit Log</span>
+      </button>
+      <button class="nav-item" onclick="showPage('checklist-history')" id="nav-checklist-history" data-label="Checklist History">
+        <i class="fa-solid fa-clock-rotate-left"></i> <span>Checklist History</span>
+      </button>
+      <button class="nav-item" onclick="openSettings()" id="nav-settings" data-label="Settings">
+        <i class="fa-solid fa-gear"></i> <span>Settings</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-secondary btn-sm" onclick="logout()" style="width:100%;margin-bottom:10px"><i class="fa-solid fa-sign-out"></i> <span>Logout</span></button>
+      <span>MaintTrack v2.0 &middot; &copy; 2026</span>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <div class="main" id="page-main">
+
+    <!-- Topbar -->
+<div class="topbar">
+      <h2 id="page-title">Dashboard</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openAdvancedSearch()" title="Advanced Search">
+          <i class="fa-solid fa-magnifying-glass"></i> Search
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="showCostAnalytics()" title="Cost Analytics">
+          <i class="fa-solid fa-chart-line"></i> Analytics
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="toggleDarkMode()" title="Toggle Dark Mode">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+        <button class="btn btn-secondary btn-sm" style="position:relative;" onclick="openAlerts()" title="Alerts">
+          <i class="fa-solid fa-bell"></i> Alerts
+          <span data-alerts-badge style="position:absolute;top:-5px;right:-5px;background:var(--red);color:white;width:18px;height:18px;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:bold;">0</span>
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="showPredictiveMaintenance()" title="Predictive Maintenance" style="position:relative;">
+          <i class="fa-solid fa-lightbulb"></i> Predictive
+          <span data-predictive-badge style="position:absolute;top:-5px;right:-5px;background:var(--amber,#c47a12);color:white;width:18px;height:18px;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:bold;display:none">0</span>
+        </button>
+        <span class="topbar-divider" aria-hidden="true"></span>
+        <button class="btn btn-primary btn-sm" onclick="openAddEquipModal()">
+          <i class="fa-solid fa-plus"></i> Add Equipment
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openAddWorkModal(null)">
+          <i class="fa-solid fa-wrench"></i> Log Work
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── DASHBOARD ── -->
+<div id="page-dashboard" class="section active">
+<div class="dash-hero card">
+          <div class="dash-hero-main">
+            <span class="dash-hero-kicker">Operations overview</span>
+            <h3 data-dash-greeting>Good to see you</h3>
+            <p>Live snapshot of your fleet, workloads, and maintenance spend.</p>
+            <div class="dash-hero-meta">
+              <span class="dash-chip" id="dash-date-chip"></span>
+              <span class="dash-chip dash-chip-green" id="dash-status-pill">Checking systems&hellip;</span>
+            </div>
+          </div>
+          <div class="dash-hero-actions">
+            <button class="btn btn-primary btn-sm" onclick="openAddEquipModal()"><i class="fa-solid fa-plus"></i> Add Equipment</button>
+            <button class="btn btn-secondary btn-sm" onclick="openAddWorkModal(null)"><i class="fa-solid fa-wrench"></i> Log Work</button>
+          </div>
+        </div>
+        <div class="metrics-grid" id="dash-metrics"></div>
+        <div class="dash-grid" id="dash-grid">
+          <div class="card" id="dash-recent-card">
+            <div class="dash-card-head">
+              <i class="fa-solid fa-clock-rotate-left" style="background:var(--blue-light);color:var(--blue)"></i> Recent Work
+              <span class="hd-spacer"></span>
+              <span class="hd-link" onclick="showPage('worklog')">View all <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+            <div id="dash-recent"></div>
+          </div>
+          <div class="card" id="dash-equip-card">
+            <div class="dash-card-head">
+              <i class="fa-solid fa-triangle-exclamation" style="background:var(--amber-light);color:var(--amber)"></i> Aging Equipment
+              <span class="hd-spacer"></span>
+              <span class="hd-link" onclick="showPage('equipment')">All equipment <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+            <div id="dash-aging"></div>
+          </div>
+        </div>
+        <div class="dash-grid">
+          <div class="card" id="dash-spend-card">
+            <div class="dash-card-head">
+              <i class="fa-solid fa-chart-line" style="background:var(--blue-light);color:var(--blue-strong)"></i> Spend Trend
+              <span class="hd-spacer"></span>
+              <span class="hd-link" onclick="showCostAnalytics()">Full analytics <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+            <div class="dash-chart-box" id="dash-spend-box"></div>
+          </div>
+          <div class="card" id="dash-attn-card">
+            <div class="dash-card-head">
+              <i class="fa-solid fa-bell" style="background:var(--red-light);color:var(--red)"></i> Needs Attention
+              <span class="hd-spacer"></span>
+              <span class="hd-link" onclick="showPage('health')">Health check <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+<div id="dash-attn"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── EQUIPMENT LIST ── -->
+      <div id="page-equipment" class="section">
+        <div class="filter-row">
+          <input type="search" id="eq-search" placeholder="Search name or serial…" oninput="renderEquipTable()">
+          <select id="eq-filter-type" onchange="renderEquipTable()">
+            <option value="">All types</option>
+            <option>AC Unit</option><option>Generator</option><option>Elevator</option>
+            <option>HVAC</option><option>Pump</option><option>Compressor</option>
+            <option>Vehicle</option><option>Other</option>
+          </select>
+          <select id="eq-filter-status" onchange="renderEquipTable()">
+            <option value="">All status</option>
+            <option>Active</option><option>Under Repair</option><option>Inactive</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="downloadAllReports()" title="Download PDF Report">
+            <i class="fa-solid fa-file-pdf"></i> PDF Report
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="downloadAllReportsWord()" title="Download Word Report">
+            <i class="fa-solid fa-file-word"></i> Word Report
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="ExcelManager.exportEquipmentToExcel()" title="Export equipment to CSV">
+            <i class="fa-solid fa-file-csv"></i> Export CSV
+          </button>
+<button class="btn btn-secondary btn-sm" onclick="ExcelManager.importFromExcel()" title="Import equipment/work from CSV">
+            <i class="fa-solid fa-file-import"></i> Import CSV
+          </button>
+        </div>
+        <div class="file-tools">
+          <span class="file-tools-label"><i class="fa-solid fa-folder-open"></i> Data &amp; File Tools</span>
+          <button class="btn btn-secondary btn-sm" onclick="downloadImportTemplate()" title="Download import template">
+            <i class="fa-solid fa-file-arrow-down"></i> Download Template
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="importEquipmentDoc()" title="Import equipment list">
+            <i class="fa-solid fa-file-import"></i> Import
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="uploadTemplateFile()" title="Upload filled template">
+            <i class="fa-solid fa-file-upload"></i> Upload Template
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="uploadTemplateToServer()" title="Server Import">
+            <i class="fa-solid fa-server"></i> Server Import
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="uploadDocxToServer()" title="Upload DOCX to Server">
+            <i class="fa-solid fa-file-word"></i> Upload DOCX
+          </button>
+        </div>
+<div class="card" style="padding:0">
+          <div class="card-toolbar">
+            <div class="pane-title"><i class="fa-solid fa-cubes" style="background:var(--blue-light);color:var(--blue)"></i> Equipment Registry <span class="count-chip" id="eq-count"></span></div>
+            <button class="btn btn-primary btn-sm" onclick="openAddEquipModal()"><i class="fa-solid fa-plus"></i> Add Equipment</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Equipment</th><th>Serial No.</th><th>Type</th>
+                  <th>Location</th><th>Installed</th><th>Status</th>
+                  <th>Works</th><th>Lifespan Used</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="equip-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pager" id="eq-pager"></div>
+        </div>
+      </div>
+
+      <!-- ── EQUIPMENT DETAIL ── -->
+      <div id="page-detail" class="section">
+        <button class="back-btn" onclick="showPage('equipment')">
+          <i class="fa-solid fa-arrow-left"></i> Back to Equipment
+        </button>
+        <div id="detail-content"></div>
+      </div>
+
+      <!-- ── WORK LOG ── -->
+<div id="page-worklog" class="section">
+        <div class="pane-bar">
+          <div>
+            <div class="pane-title"><i class="fa-solid fa-clipboard-list" style="background:var(--blue-light);color:var(--blue)"></i> Work Log <span class="count-chip" id="wl-count"></span></div>
+            <div class="pane-sub">Every maintenance, repair and inspection job across the fleet.</div>
+          </div>
+          <div class="pane-actions">
+            <button class="btn btn-primary btn-sm" onclick="openAddWorkModal(null)"><i class="fa-solid fa-wrench"></i> Log Work</button>
+          </div>
+        </div>
+        <div class="filter-row">
+          <select id="wl-filter-equip" onchange="renderWorkLog()">
+            <option value="">All equipment</option>
+          </select>
+          <select id="wl-filter-type" onchange="renderWorkLog()">
+            <option value="">All work types</option>
+            <option>Maintenance</option><option>Repair</option><option>Inspection</option>
+          </select>
+          <input type="month" id="wl-filter-month" onchange="renderWorkLog()" style="width:auto;max-width:200px">
+        </div>
+        <div id="worklog-list"></div>
+        <div class="pager" id="wl-pager"></div>
+      </div>
+
+      <!-- ── EQUIPMENT HEALTH ── -->
+      <div id="page-health" class="section">
+        <div class="dash-grid" id="health-stats"></div>
+<div class="pane-bar">
+          <div>
+            <div class="pane-title"><i class="fa-solid fa-heart-pulse" style="background:var(--green-light);color:var(--green)"></i> Fleet Health <span class="count-chip" id="health-count"></span></div>
+            <div class="pane-sub">Real-time health scoring, age and failure risk per asset.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-toolbar">
+            <div class="pane-title">Health Scores</div>
+            <button class="btn btn-secondary btn-sm" onclick="renderHealthPage()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Equipment</th>
+                  <th>Health Score</th>
+                  <th>Status</th>
+                  <th>Age (%)</th>
+                  <th>Failure Risk</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="health-table-body"></tbody>
+            </table>
+          </div>
+          <div class="pager" id="health-pager"></div>
+        </div>
+      </div>
+
+      <!-- ── MAINTENANCE SCHEDULES ── -->
+<div id="page-schedules" class="section">
+        <div class="pane-bar">
+          <div>
+            <div class="pane-title"><i class="fa-solid fa-calendar-check" style="background:var(--blue-light);color:var(--blue)"></i> Maintenance Schedules <span class="count-chip" id="sched-count"></span></div>
+            <div class="pane-sub">Plan, track and complete recurring maintenance.</div>
+          </div>
+          <div class="pane-actions">
+            <button class="btn btn-primary" onclick="showScheduleModal()"><i class="fa-solid fa-plus"></i> Schedule Maintenance</button>
+            <select id="schedule-filter-status" onchange="renderSchedules()">
+              <option value="">All Schedules</option>
+              <option>Scheduled</option>
+              <option>In Progress</option>
+              <option>Completed</option>
+            </select>
+          </div>
+        </div>
+        <div id="schedules-list"></div>
+        <div class="pager" id="sched-pager"></div>
+      </div>
+
+      <!-- ── CHECKLISTS ── -->
+<div id="page-checklists" class="section">
+        <div class="pane-bar">
+          <div>
+            <div class="pane-title"><i class="fa-solid fa-clipboard-check" style="background:var(--amber-light);color:var(--amber)"></i> Inspection Checklists <span class="count-chip" id="cl-count"></span></div>
+            <div class="pane-sub">Templates and inspections for consistent field checks.</div>
+          </div>
+          <div class="pane-actions">
+            <button class="btn btn-primary" onclick="showCreateChecklistModal()"><i class="fa-solid fa-plus"></i> New Checklist</button>
+          </div>
+        </div>
+        <div id="checklists-list"></div>
+        <div class="pager" id="cl-pager"></div>
+      </div>
+
+      <!-- ── TEAM MANAGEMENT ── -->
+<div id="page-team" class="section" data-require="canManageUsers">
+        <div class="pane-bar">
+          <div>
+            <div class="pane-title"><i class="fa-solid fa-users" style="background:var(--blue-light);color:var(--blue)"></i> Team Management <span class="count-chip" id="team-count"></span></div>
+            <div class="pane-sub">Manage user roles, departments and access.</div>
+          </div>
+          <div class="pane-actions">
+            <button class="btn btn-primary" onclick="adminPanel.openMemberModal()"><i class="fa-solid fa-plus"></i> Add Team Member</button>
+            <button class="btn btn-secondary" onclick="adminPanel.downloadBackup()" title="Download full system backup (JSON)"><i class="fa-solid fa-database"></i> Download Backup</button>
+          </div>
+        </div>
+        <div class="card" style="padding:0">
+          <div class="card-toolbar">
+            <div class="pane-title">Team Members</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Department</th>
+                  <th>Phone</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="team-table-body">
+                <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3)">No team members added yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pager" id="team-pager"></div>
+        </div>
+      </div>
+
+      <!-- ── AUDIT LOG ── -->
+<div id="page-audit" class="section" data-require="canManageUsers">
+        <div class="pane-bar">
+          <div>
+            <div class="pane-title"><i class="fa-solid fa-user-shield" style="background:var(--red-light);color:var(--red)"></i> Audit Log <span class="count-chip" id="audit-count"></span></div>
+            <div class="pane-sub">Every action recorded across the system.</div>
+          </div>
+          <div class="pane-actions">
+            <button class="btn btn-secondary btn-sm" onclick="adminPanel.renderAuditLog()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+        </div>
+        <div class="filter-row" style="margin-bottom:16px">
+          <select id="audit-filter-action" onchange="adminPanel.renderAuditLog()">
+            <option value="">All Actions</option>
+            <option>CREATE</option><option>UPDATE</option><option>DELETE</option><option>VIEW</option>
+            <option>LOGIN</option><option>LOGIN_FAILED</option><option>REGISTER</option>
+            <option>APPROVE</option><option>REJECT</option><option>BACKUP</option>
+          </select>
+          <select id="audit-filter-entity" onchange="adminPanel.renderAuditLog()">
+            <option value="">All Entities</option>
+            <option>EQUIPMENT</option><option>WORK</option><option>USER</option>
+            <option>AUTH</option><option>SCHEDULE</option><option>CHECKLIST</option><option>HEALTH</option><option>BACKUP</option>
+          </select>
+        </div>
+        <div class="card" style="padding:0">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>When</th><th>User</th><th>Action</th><th>Entity</th><th>Entity ID</th><th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-body">
+                <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text3)">Loading audit trail…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pager" id="audit-pager"></div>
+        </div>
+      </div>
+
+      <!-- ── CHECKLIST HISTORY ── -->
+<div id="page-checklist-history" class="section">
+        <div class="pane-bar">
+          <div>
+            <div class="pane-title"><i class="fa-solid fa-clock-rotate-left" style="background:var(--blue-light);color:var(--blue)"></i> Checklist History <span class="count-chip" id="hist-count"></span></div>
+            <div class="pane-sub">Completed inspections and reported issues.</div>
+          </div>
+        </div>
+        <div class="card" style="padding:0">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th><th>Checklist</th><th>Equipment</th><th>Completed By</th><th>Items</th><th>% Complete</th><th>Issues Found</th>
+                </tr>
+              </thead>
+              <tbody id="checklist-history-body">
+                <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pager" id="hist-pager"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Add / Edit Equipment Modal ── -->
+<div class="modal-overlay" id="equip-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="equip-modal-title">Add Equipment</h3>
+      <button type="button" class="modal-close" onclick="closeModal('equip-modal')" aria-label="Close equipment form"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="form-grid">
+      <div class="form-row-2">
+        <div class="form-group"><label for="f-name">Equipment Name *</label><input id="f-name" name="equipmentName" placeholder="e.g. AC Unit A"></div>
+        <div class="form-group"><label for="f-serial">Serial Number *</label><input id="f-serial" name="serialNumber" placeholder="e.g. AC-2024-001"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label for="f-type">Type</label>
+          <select id="f-type" name="type" title="Equipment type">
+            <option>AC Unit</option><option>Generator</option><option>Elevator</option>
+            <option>HVAC</option><option>Pump</option><option>Compressor</option>
+            <option>Vehicle</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label for="f-status">Status</label>
+          <select id="f-status" name="status" title="Equipment status"><option>Active</option><option>Under Repair</option><option>Inactive</option></select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label for="f-installed">Installation Date</label><input type="date" id="f-installed" name="installationDate"></div>
+        <div class="form-group"><label for="f-lifespan">Lifespan (years)</label><input type="number" id="f-lifespan" name="lifespan" value="10" min="1" max="50"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label for="f-price">Purchase Price (GHS)</label><input type="number" id="f-price" name="purchasePrice" min="0" step="0.01" placeholder="e.g. 4500"></div>
+        <div class="form-group"><label for="f-warranty">Warranty</label><input type="text" id="f-warranty" name="warranty" placeholder="e.g. 2026-12-31 / 3yr"></div>
+      </div>
+      <div class="form-group"><label for="f-location">Location</label><input id="f-location" name="location" placeholder="e.g. Block A, Floor 2"></div>
+      <div class="form-group"><label for="f-notes">Notes</label><textarea id="f-notes" name="notes" placeholder="Any additional details…"></textarea></div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('equip-modal')">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveEquip()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Log Work Modal ── -->
+<div class="modal-overlay" id="work-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="work-modal-title">Log Maintenance Work</h3>
+      <button type="button" class="modal-close" onclick="closeModal('work-modal')" aria-label="Close work log form"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label for="w-equip">Equipment *</label>
+        <select id="w-equip" name="equipment" title="Equipment"></select>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label for="w-type">Work Type</label>
+          <select id="w-type" name="workType" title="Work type"><option>Maintenance</option><option>Repair</option><option>Inspection</option></select>
+        </div>
+        <div class="form-group"><label for="w-date">Date *</label><input type="date" id="w-date" name="workDate"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label for="w-tech">Technician / Team</label><input id="w-tech" name="technician" placeholder="Name or company"></div>
+        <div class="form-group"><label for="w-dur">Duration (hours)</label><input type="number" id="w-dur" name="duration" min="0" step="0.5" value="0"></div>
+      </div>
+      <div class="form-group"><label for="w-cost">Cost (GHS)</label><input type="number" id="w-cost" name="cost" min="0" step="0.01" value="0"></div>
+      <div class="form-group"><label for="w-desc">Description *</label><textarea id="w-desc" name="description" placeholder="Describe the work done in detail…"></textarea></div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('work-modal')">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="submitWorkForm()"><i class="fa-solid fa-floppy-disk"></i> Save Record</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Confirm Delete ── -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h4 id="confirm-title">Delete?</h4>
+    <p id="confirm-msg">This action cannot be undone.</p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+<script src="js/advanced-features.js"></script>
+<script src="js/enhanced-features.js"></script>
+<script src="js/all-improvements.js"></script>
+<script src="js/new-pages.js"></script>
+<script src="js/admin-panel.js"></script>
+</body>
+</html>

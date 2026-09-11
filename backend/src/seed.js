@@ -3,7 +3,6 @@ const sequelize = require('./db');
 require('./models');
 const { User, Equipment, Work } = require('./models');
 const fs = require('fs');
-const path = require('path');
 
 async function seed(options = { sync: true }) {
   try {
@@ -25,7 +24,6 @@ async function seed(options = { sync: true }) {
         isActive: true,
       });
       console.log('Created admin user:', adminEmail);
-      console.log('Admin password:', adminPassword);
     } else {
       console.log('Admin user already exists:', adminEmail);
     }
@@ -33,7 +31,7 @@ async function seed(options = { sync: true }) {
     // Save seed info to file for UI display (development only)
     try {
       const info = { adminEmail, adminPassword };
-      fs.writeFileSync(path.join(__dirname, 'seed-info.json'), JSON.stringify(info, null, 2));
+      fs.writeFileSync(require('./config').seedInfoPath, JSON.stringify(info, null, 2));
       console.log('Wrote seed info to seed-info.json');
     } catch (e) {
       console.warn('Failed to write seed-info.json', e);

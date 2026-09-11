@@ -1,11 +1,9 @@
 services:
   - type: web
     name: mainttrack
-    runtime: node
+    runtime: docker
     plan: free
-    rootDir: backend
-    buildCommand: npm ci
-    startCommand: npm start
+    dockerfilePath: Dockerfile
     healthCheckPath: /api/health-check
     envVars:
       - key: JWT_SECRET
@@ -15,8 +13,10 @@ services:
     # NOTE: On the free tier the filesystem is ephemeral — the SQLite DB and
     # uploads are re-seeded on every cold start (admin + sample data return,
     # user-entered data resets). To persist data, upgrade to a paid plan and
-    # add a disk (uncomment below):
+    # add a disk (uncomment below and set DB_PATH=/data/maintrack.db):
     #disk:
     #  name: mainttrack-data
     #  mountPath: /data
-    #  sizeGB: 1
+    #  envVars:
+    #    - key: DB_PATH
+    #      value: /data/maintrack.db

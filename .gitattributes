@@ -1,0 +1,22 @@
+# Normalize line endings across all text files (LF in the repo)
+* text=auto
+
+*.js text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Binary assets must never be normalized
+*.db binary
+*.db-journal binary
+*.db-wal binary
+*.db-shm binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.docx binary

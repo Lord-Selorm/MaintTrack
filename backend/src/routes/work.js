@@ -10,8 +10,9 @@ const { logActivity } = require('../middleware/audit');
 const Work = require('../models/Work');
 const Equipment = require('../models/Equipment');
 const WorkAttachment = require('../models/WorkAttachment');
+const config = require('../config');
 
-const uploadDir = path.join(__dirname, '../uploads/attachments');
+const uploadDir = path.join(config.uploadsDir, 'attachments');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }

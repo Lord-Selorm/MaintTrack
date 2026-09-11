@@ -1,0 +1,17 @@
+{
+  "name": "mainttrack",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Equipment Maintenance Tracker - Express + SQLite API with a vanilla JS single-page frontend",
+  "scripts": {
+    "start": "npm start --prefix backend",
+    "dev": "npm run dev --prefix backend",
+    "seed": "npm run seed --prefix backend",
+    "install:all": "npm install --prefix backend",
+    "check": "node --check backend/src/server.js && node --check backend/src/app.js && node --check frontend/js/main.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}

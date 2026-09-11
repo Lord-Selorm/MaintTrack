@@ -122,10 +122,12 @@ const auth = require('../middleware/auth');
 
 // Development helper: expose seed admin credentials for the login screen
 router.get('/seed-info', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not available in production' });
+  }
   try {
     const fs = require('fs');
-    const path = require('path');
-    const seedFile = path.join(__dirname, '../seed-info.json');
+    const seedFile = require('../config').seedInfoPath;
     if (fs.existsSync(seedFile)) {
       res.json(JSON.parse(fs.readFileSync(seedFile, 'utf8')));
     } else {

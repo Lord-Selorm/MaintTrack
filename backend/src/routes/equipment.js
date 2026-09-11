@@ -8,9 +8,10 @@ const auth = require('../middleware/auth');
 const { logActivity } = require('../middleware/audit');
 const Equipment = require('../models/Equipment');
 const Work = require('../models/Work');
+const config = require('../config');
 
 // Setup multer for file uploads
-const uploadDir = path.join(__dirname, '../uploads/manuals');
+const uploadDir = path.join(config.uploadsDir, 'manuals');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }

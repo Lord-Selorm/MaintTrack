@@ -8,7 +8,7 @@
  * schema and applies `ALTER TABLE ... ADD COLUMN` for new fields so existing
  * databases upgrade in place without destructive re-sync.
  *
- * Usage (from server.js after authenticate, before sync):
+ * Usage (from server.js after authenticate and sync):
  *   await runMigrations();
  * ═══════════════════════════════════════════════════════════════════════════
  */

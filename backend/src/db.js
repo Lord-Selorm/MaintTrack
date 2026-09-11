@@ -25,7 +25,7 @@
  */
 
 const { Sequelize } = require('sequelize');
-const path = require('path');
+const config = require('./config');
 
 // ─────────────────────────────────────────────────────────────────────────
 // SEQUELIZE INITIALIZATION
@@ -35,7 +35,7 @@ const path = require('path');
 // logging: Set to console.log to see all SQL queries for debugging
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: process.env.DB_PATH || path.join(__dirname, 'maintenance_tracker.db'),
+  storage: process.env.DB_PATH || config.dbPath,
   logging: false,  // Change to console.log for debugging SQL queries
 });
 
