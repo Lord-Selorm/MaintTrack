@@ -35,7 +35,7 @@ const path = require('path');
 // logging: Set to console.log to see all SQL queries for debugging
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: path.join(__dirname, 'maintenance_tracker.db'),
+  storage: process.env.DB_PATH || path.join(__dirname, 'maintenance_tracker.db'),
   logging: false,  // Change to console.log for debugging SQL queries
 });
 

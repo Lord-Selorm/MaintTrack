@@ -56,7 +56,14 @@ const app = express();
 // Allows requests from frontend application (localhost:3000, file:// protocol)
 // Credentials enabled for cookie/session support if needed
 app.use(cors({
-  origin: ['http://localhost:5000', 'http://localhost:8000', 'http://127.0.0.1:8000', 'http://localhost:3000', 'file://'],
+  origin: function (origin, cb) {
+    // Allow requests with no origin (same-origin, curl, mobile apps, server-to-server)
+    if (!origin) return cb(null, true);
+    // In production allow all same-service origins; in dev allow localhost
+    if (process.env.NODE_ENV === 'production') return cb(null, true);
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return cb(null, true);
+    return cb(null, true); // same-origin frontend is served by this server
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -76,7 +83,11 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Adds security headers to all responses
 // CSP policy allows local scripts and external CDN resources
 app.use((req, res, next) => {
-  res.setHeader('Content-Security-Policy', "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://cdnjs.cloudflare.com https://cdn.jsdelivr.net");
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://*.render.com; " +
+    "img-src 'self' data: blob: https:; " +
+    "font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.gstatic.com;"
+  );
   next();
 });
 

@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: mainttrack
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health-check
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+    # NOTE: On the free tier the filesystem is ephemeral — the SQLite DB and
+    # uploads are re-seeded on every cold start (admin + sample data return,
+    # user-entered data resets). To persist data, upgrade to a paid plan and
+    # add a disk (uncomment below):
+    #disk:
+    #  name: mainttrack-data
+    #  mountPath: /data
+    #  sizeGB: 1
