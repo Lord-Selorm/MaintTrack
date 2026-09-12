@@ -469,23 +469,22 @@ function openSettings() {
           <div style="font-size:11px;color:var(--text3);margin-top:4px"><i class="fa-solid fa-info-circle" style="margin-right:4px"></i>Role is set by administrator</div>
         </div>
         
-        <h4 style="margin-top:20px;margin-bottom:10px">Display Preferences</h4>
-        <div class="form-group">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
-            <input type="checkbox" id="settings-dark-mode" ${darkMode?.isDark ? 'checked' : ''} onchange="darkMode?.toggle()">
-            <span>Dark Mode</span>
-          </label>
+        <h4 style="margin-top:20px;margin-bottom:10px">Appearance</h4>
+        <div class="theme-picker" id="theme-picker">
+          <button type="button" class="theme-option ${darkMode?.mode === 'light' ? 'active' : ''}" data-theme="light" onclick="darkMode?.setMode('light')">
+            <i class="fa-solid fa-sun"></i><span>Light</span>
+          </button>
+          <button type="button" class="theme-option ${darkMode?.mode === 'dark' ? 'active' : ''}" data-theme="dark" onclick="darkMode?.setMode('dark')">
+            <i class="fa-solid fa-moon"></i><span>Dark</span>
+          </button>
+          <button type="button" class="theme-option ${darkMode?.mode === 'system' ? 'active' : ''}" data-theme="system" onclick="darkMode?.setMode('system')">
+            <i class="fa-solid fa-desktop"></i><span>System</span>
+          </button>
         </div>
-        <div class="form-group">
-          <label>Sidebar Position</label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
-            <input type="radio" name="sidebar" value="expanded" ${!sidebarCollapsed ? 'checked' : ''} onchange="if (sidebarCollapsed) toggleSidebar()">
-            <span>Expanded</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
-            <input type="radio" name="sidebar" value="collapsed" ${sidebarCollapsed ? 'checked' : ''} onchange="if (!sidebarCollapsed) toggleSidebar()">
-            <span>Collapsed</span>
-          </label>
+        <div class="form-group" style="margin-top:16px">
+          <label style="margin-bottom:8px">Sidebar Position</label>
+          <label class="opt-ridge"><input type="radio" name="sidebar" value="expanded" ${!sidebarCollapsed ? 'checked' : ''} onchange="if (sidebarCollapsed) toggleSidebar()"><span>Expanded</span></label>
+          <label class="opt-ridge"><input type="radio" name="sidebar" value="collapsed" ${sidebarCollapsed ? 'checked' : ''} onchange="if (!sidebarCollapsed) toggleSidebar()"><span>Collapsed</span></label>
         </div>
         
         <div class="form-actions" style="margin-top:20px">

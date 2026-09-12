@@ -11,7 +11,18 @@
 
 class DarkMode {
   constructor() {
-    this.isDark = localStorage.getItem('darkMode') === 'true' || this.getSystemPreference();
+    if (!localStorage.getItem('theme') && localStorage.getItem('darkMode') === 'true') {
+      localStorage.setItem('theme', 'dark');
+    }
+    this.mode = localStorage.getItem('theme') || 'system';
+    this._mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    this.isDark = this.mode === 'dark' || (this.mode === 'system' && this.getSystemPreference());
+    if (this._mq && this._mq.addEventListener) {
+      this._mq.addEventListener('change', () => {
+        if (this.mode === 'system') { this.isDark = this._mq.matches; this.applyTheme(); }
+      });
+    }
+    this._tr = null;
     this.applyTheme();
   }
 
@@ -19,32 +30,62 @@ class DarkMode {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
-  toggle() {
-    this.isDark = !this.isDark;
-    localStorage.setItem('darkMode', this.isDark);
+  setMode(mode) {
+    this.mode = mode;
+    localStorage.setItem('theme', mode);
+    this.isDark = mode === 'dark' || (mode === 'system' && this.getSystemPreference());
     this.applyTheme();
+    this.updateUI();
+  }
+
+  toggle() {
+    this.setMode(this.isDark ? 'light' : 'dark');
   }
 
   applyTheme() {
+    const root = document.documentElement;
+    root.classList.remove('theme-transition');
+    void root.offsetWidth;
+    root.classList.add('theme-transition');
     if (this.isDark) {
-      document.documentElement.style.setProperty('--bg', '#0e0f13');
-      document.documentElement.style.setProperty('--surface', '#17181f');
-      document.documentElement.style.setProperty('--surface2', '#20222b');
-      document.documentElement.style.setProperty('--border', '#2c2f3a');
-      document.documentElement.style.setProperty('--text', '#eceef1');
-      document.documentElement.style.setProperty('--text2', '#a2a8b4');
-      document.documentElement.style.setProperty('--text3', '#62697a');
+      root.style.setProperty('--bg', '#0e0f13');
+      root.style.setProperty('--surface', '#17181f');
+      root.style.setProperty('--surface2', '#1f222b');
+      root.style.setProperty('--surface3', '#262a35');
+      root.style.setProperty('--border', '#2c2f3a');
+      root.style.setProperty('--border-strong', '#3a3e4c');
+      root.style.setProperty('--text', '#eceef1');
+      root.style.setProperty('--text2', '#a2a8b4');
+      root.style.setProperty('--text3', '#62697a');
+      root.style.setProperty('--blue-light', '#2a1e45');
+      root.style.setProperty('--green-light', '#13291c');
+      root.style.setProperty('--amber-light', '#2b2110');
+      root.style.setProperty('--red-light', '#2a1518');
       document.body.classList.add('dark-mode');
     } else {
-      document.documentElement.style.setProperty('--bg', '#f5f6f8');
-      document.documentElement.style.setProperty('--surface', '#ffffff');
-      document.documentElement.style.setProperty('--surface2', '#f1f2f5');
-      document.documentElement.style.setProperty('--border', '#e3e5ea');
-      document.documentElement.style.setProperty('--text', '#181b21');
-      document.documentElement.style.setProperty('--text2', '#4d5763');
-      document.documentElement.style.setProperty('--text3', '#98a0ad');
+      root.style.setProperty('--bg', '#f5f6f8');
+      root.style.setProperty('--surface', '#ffffff');
+      root.style.setProperty('--surface2', '#f1f2f5');
+      root.style.setProperty('--surface3', '#f8f9fb');
+      root.style.setProperty('--border', '#e3e5ea');
+      root.style.setProperty('--border-strong', '#ccd1da');
+      root.style.setProperty('--text', '#181b21');
+      root.style.setProperty('--text2', '#4d5763');
+      root.style.setProperty('--text3', '#98a0ad');
+      root.style.setProperty('--blue-light', '#f3eeff');
+      root.style.setProperty('--green-light', '#f0fdf4');
+      root.style.setProperty('--amber-light', '#fffbeb');
+      root.style.setProperty('--red-light', '#fef2f2');
       document.body.classList.remove('dark-mode');
     }
+    clearTimeout(this._tr);
+    this._tr = setTimeout(() => root.classList.remove('theme-transition'), 300);
+  }
+
+  updateUI() {
+    document.querySelectorAll('.theme-option').forEach(el => {
+      el.classList.toggle('active', el.dataset.theme === this.mode);
+    });
   }
 }
 
